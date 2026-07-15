@@ -41,4 +41,5 @@ The AI never sends anything by itself — drafts wait for human review, which ke
 4. Replace `YOUR_SPREADSHEET_ID` in the Sheets nodes with your own sheet
 5. Activate the workflow — it runs automatically on new emails
 
+## Example output
 <img width="2554" height="1214" alt="ai-draft-example png" src="https://github.com/user-attachments/assets/2c488ae1-0529-48d7-9e61-c08a45580cbe" />
