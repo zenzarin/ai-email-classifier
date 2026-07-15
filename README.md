@@ -4,6 +4,10 @@ An n8n automation that watches a Gmail inbox, classifies every incoming email wi
 
 Built during the Digital Marketing course (B3E4500101) at Tokyo International University.
 
+<img width="2554" height="1214" alt="ai-draft-example png" src="https://github.com/user-attachments/assets/2c488ae1-0529-48d7-9e61-c08a45580cbe" />
+<img width="2546" height="1440" alt="email-classifier-workflow png" src="https://github.com/user-attachments/assets/ac45f2a3-8e1e-4cc6-9e39-c4859984fedb" />
+
+
 ## What it does
 
 1. **Gmail Trigger** — fires automatically whenever a new email arrives
@@ -37,3 +41,5 @@ The AI never sends anything by itself — drafts wait for human review, which ke
 3. Point the Ollama node at your Ollama server and pull a model, e.g. `ollama pull qwen2.5:1.5b`
 4. Replace `YOUR_SPREADSHEET_ID` in the Sheets nodes with your own sheet
 5. Activate the workflow — it runs automatically on new emails
+
+
