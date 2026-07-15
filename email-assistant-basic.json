@@ -1,0 +1,526 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "52342b76-5e92-4242-9359-f8de2806c372",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { id: \"E001\", subject: \"Order not delivered yet\", to: \"support@store.com\", from: \"sarah.johnson@email.com\", body: \"Hello, I placed an order (#12345) over a week ago but it still hasn't arrived. The tracking link hasn't updated in several days. Could you please check the status?\" } },\n  { json: { id: \"E002\", subject: \"Received wrong item\", to: \"support@store.com\", from: \"michael.lee@email.com\", body: \"Hi, I ordered a black jacket but received a blue one instead. My order number is #56789. Please advise how to fix this.\" } },\n  { json: { id: \"E003\", subject: \"Requesting refund for damaged item\", to: \"support@store.com\", from: \"emily.clark@email.com\", body: \"Hello, the item I received is damaged and not usable. I would like to request a full refund. Please let me know the return process.\" } },\n  { json: { id: \"E004\", subject: \"Cancel my order\", to: \"support@store.com\", from: \"daniel.smith@email.com\", body: \"Hi, I just placed an order a few hours ago but would like to cancel it. Please process a refund as soon as possible.\" } },\n  { json: { id: \"E005\", subject: \"Very disappointed with service\", to: \"support@store.com\", from: \"linda.wilson@email.com\", body: \"I am very disappointed with your service. I tried contacting support multiple times and received no response. This is unacceptable.\" } },\n  { json: { id: \"E006\", subject: \"Terrible product quality\", to: \"support@store.com\", from: \"james.brown@email.com\", body: \"The quality of the product is terrible. It broke after one use. This is a very frustrating experience and I expected much better.\" } },\n  { json: { id: \"E007\", subject: \"Question about product availability\", to: \"support@store.com\", from: \"olivia.martin@email.com\", body: \"Hello, I would like to know if the red version of this product is currently in stock. Also, how long does shipping usually take?\" } },\n  { json: { id: \"E008\", subject: \"Shipping and return policy question\", to: \"support@store.com\", from: \"william.taylor@email.com\", body: \"Hi, can you please clarify your return policy? Also, do you offer international shipping to Japan?\" } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "98de04c6-7793-4466-8543-a399db8e7a18",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.body }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Inquiry",
+              "description": "Customer asking a question or requesting info (product, order status, shipping, policies). Neutral tone, no problem reported."
+            },
+            {
+              "category": "Complaint",
+              "description": "Customer reporting a problem or expressing dissatisfaction (damaged item, wrong order, late delivery, refund request). Negative or frustrated tone."
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "\nPlease classify the text provided by the user into one of the following categories: {categories}, and use the provided formatting instructions below. Don't explain, and only output the json.\n",
+          "enableAutoFixing": true,
+          "batching": {
+            "batchSize": 1
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "2ee0c80a-019b-4795-bf99-ee3f721df012",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:3b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        352,
+        208
+      ],
+      "id": "abf4c0a6-9b9b-43d8-a633-068c5d1f1c52",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Re:  {{ $json.subject }}",
+        "message": "Hello,  Thank you for contacting us.  We have received your inquiry and will check the details for you. Our team will get back to you as soon as possible with the information you need.  Thank you for your patience.  Best regards, Customer Support Team",
+        "options": {
+          "sendTo": "={{ $json.from }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        -80
+      ],
+      "id": "773af200-5c57-443b-ad7a-13ec44319b74",
+      "name": "Create a draft",
+      "webhookId": "7f2af6c7-ac20-4fd5-9c2e-b75f2e8bd2ea",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "LOGS",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now }}",
+            "email_id": "={{ $('Gmail Trigger').item.json.id }}",
+            "from": "={{ $('Gmail Trigger').item.json.From }}",
+            "category": "Inquiry",
+            "draft_id": "={{ $json.id }}",
+            "status": "Draft saved",
+            "thread_id": "={{ $json.message.threadId }}",
+            "original_message": "={{ $('Gmail Trigger').item.json.textPlain || $('Gmail Trigger').item.json.textHtml || $('Gmail Trigger').item.json.snippet }}",
+            "subject": "={{ $('Gmail Trigger').item.json.Subject }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "from",
+              "displayName": "from",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "original_message",
+              "displayName": "original_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "draft_id",
+              "displayName": "draft_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "draft message",
+              "displayName": "draft message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        -80
+      ],
+      "id": "be4e52d9-2cae-48d7-a067-b3324401e5d5",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "support@ai-keyword.store",
+        "subject": "=Support Request: {{ $('Gmail Trigger').item.json.subject || $('Gmail Trigger').item.json.Subject }}",
+        "emailType": "text",
+        "message": "=A customer complaint was received and requires support review.\n\nCustomer email:\n{{ $('Gmail Trigger').item.json.from || $('Gmail Trigger').item.json.From }}\n\nOriginal subject:\n{{ $('Gmail Trigger').item.json.subject || $('Gmail Trigger').item.json.Subject }}\n\nOriginal message:\n{{ $('Gmail Trigger').item.json.textPlain || $('Gmail Trigger').item.json.textHtml || $('Gmail Trigger').item.json.snippet }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        784,
+        160
+      ],
+      "id": "50a69528-e398-4ade-9754-cdd43c4d3aeb",
+      "name": "Send a message",
+      "webhookId": "1ef7a700-1fc0-4f19-a313-db6999912abc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "LOGS",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now }}",
+            "email_id": "={{ $('Text Classifier').item.json.id }}",
+            "from": "={{ $('Text Classifier').item.json.from }}",
+            "thread_id": "={{ $('Send a message').item.json.threadId }}",
+            "original_message": "={{ $('Text Classifier').item.json.body }}",
+            "subject": "={{ $('Text Classifier').item.json.subject }}",
+            "category": "Complaint",
+            "status": "Message sent"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "from",
+              "displayName": "from",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "original_message",
+              "displayName": "original_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "draft_id",
+              "displayName": "draft_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "draft message",
+              "displayName": "draft message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1008,
+        160
+      ],
+      "id": "0e64070a-7283-4291-9c8c-947aee535366",
+      "name": "Append row in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "",
+  "id": "",
+  "tags": []
+}
